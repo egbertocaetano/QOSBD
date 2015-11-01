@@ -47,9 +47,8 @@ off64_t fsize(const char *filename) {
 int main(int argc, char **argv)
 {
 	if (argc != 3) {
-		// exemplo: 512MB file = n_pages 1
-		// exemplo: 1GB file = n_pages 2 
-		// exemplo: 2GB file = n_pages 4 
+		// ./teste /path/to/file/file512.dat 512
+		// ./teste /path/to/file/file1024.dat 1024
 		printf("Usage: teste <path/to/filename> <page_size>\n");
 		exit(EXIT_SUCCESS);
 	}
