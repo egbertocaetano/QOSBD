@@ -35,7 +35,7 @@ int main(void)
 	char filename[] = "/home/miguel/TCC/file_1gb.dat";
     FILE *fp;
 
-	preallocate_test_file(filename);
+//	preallocate_test_file(filename);
 
     if ((fp = fopen(filename, "r")) == NULL) {
         printf("Couldn't open test1.dat for reading\n");
@@ -62,16 +62,7 @@ int main(void)
 
     struct timeval  tv1, tv2;
 
-	gettimeofday(&tv1, NULL);
-	printf("Sequential read started...\n");
-	read_sequentially(fp, page, offsets);
-	gettimeofday(&tv2, NULL);
-
-	printf ("Sequential read total time = %f seconds\n",
-	         (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
-	         (double) (tv2.tv_sec - tv1.tv_sec));
-
-	gettimeofday(&tv1, NULL);
+    gettimeofday(&tv1, NULL);
 	printf("Random read started...\n");
 	read_random(fp, page, offsets);
 	gettimeofday(&tv2, NULL);
@@ -80,8 +71,14 @@ int main(void)
 	         (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
 	         (double) (tv2.tv_sec - tv1.tv_sec));
 
+	gettimeofday(&tv1, NULL);
+	printf("Sequential read started...\n");
+	read_sequentially(fp, page, offsets);
+	gettimeofday(&tv2, NULL);
 
-
+	printf ("Sequential read total time = %f seconds\n",
+	         (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+	         (double) (tv2.tv_sec - tv1.tv_sec));
 
     free(offsets);
     fclose(fp);
@@ -98,15 +95,16 @@ void read_sequentially(FILE* fp, char page[], u_long offsets[])
 {
 	int i = 0;
 	fpos_t pos;
-
-	fgetpos(fp, &pos);
-	while (i < NUM_OF_PAGES) {
+	rewind(fp);
+	//fgetpos(fp, &pos);
+	for (i = 0; i < NUM_OF_PAGES; i++) {
 		
-		fgetpos(fp, &pos);
-	//	printf("%ld\n", pos.__pos);
+		//fgetpos(fp, &pos);
 		fread(page, PAGE_SIZE, 1, fp);
-		i++;
 	}
+	//fgetpos(fp, &pos);
+//	printf("%ld\n", pos.__pos);
+	//fseek(fp, offsets[i] * PAGE_SIZE, SEEK_SET);
 }
 void read_random(FILE* fp, char page[], u_long offsets[])
 {
@@ -117,11 +115,13 @@ void read_random(FILE* fp, char page[], u_long offsets[])
 
 	for (i = 0; i < NUM_OF_PAGES; i++) {
 		fseek(fp, offsets[i] * PAGE_SIZE, SEEK_SET);
-		fgetpos(fp, &pos);
+		//fgetpos(fp, &pos);
 		//printf("fp: %ld\n", pos.__pos);
 		//printf("offset: %ld\n", offsets[i] * PAGE_SIZE);
 		fread(page, PAGE_SIZE, 1, fp);
 	}
+	fgetpos(fp, &pos);
+	printf("%ld\n", pos.__pos);
 }
 void shuffle(u_long *array, u_long n)
 {
