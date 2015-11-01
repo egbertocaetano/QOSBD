@@ -6,7 +6,7 @@
 typedef unsigned long u_long;
 
 #define PAGE_SIZE 512
-#define NUM_OF_PAGES (2000 * 10000L)
+#define NUM_OF_PAGES (2000 * 1000L)
 #define FILE_SIZE (PAGE_SIZE * NUM_OF_PAGES)
 
 char BLANK_PAGE[PAGE_SIZE];
@@ -15,6 +15,7 @@ void fill_indexes(u_long arr[], u_long n);
 void read_sequentially(FILE* fp, char page[], u_long offsets[]);
 void read_random(FILE* fp, char page[], u_long offsets[]);
 void shuffle(u_long *array, u_long n);
+void preallocate_test_file(char filename[]);
 
 int main(void)
 {
@@ -31,8 +32,10 @@ int main(void)
 
 
 	char page[PAGE_SIZE];
-	char filename[] = "/media/miguel/Novo HD/test.dat";
+	char filename[] = "/home/miguel/TCC/file_1gb.dat";
     FILE *fp;
+
+	preallocate_test_file(filename);
 
     if ((fp = fopen(filename, "r")) == NULL) {
         printf("Couldn't open test1.dat for reading\n");
@@ -142,8 +145,8 @@ void preallocate_test_file(char filename[])
         printf("Couldn't create new file\n");
         exit(1);
     } 
-
-	for (long i = 0; i < FILE_SIZE; i += PAGE_SIZE) {
+    u_long i;
+	for (i = 0; i < FILE_SIZE; i += PAGE_SIZE) {
 		fwrite(BLANK_PAGE, PAGE_SIZE, 1, fp);
 	}
 
