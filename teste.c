@@ -1,7 +1,17 @@
+#define _LARGEFILE64_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 #include <time.h>
+#include <signal.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
+
 #include <sys/time.h>
+#include <sys/stat.h>
 
 typedef unsigned long u_long;
 
@@ -12,14 +22,29 @@ typedef unsigned long u_long;
 char BLANK_PAGE[PAGE_SIZE];
 
 void fill_indexes(u_long arr[], u_long n);
-void read_sequentially(FILE* fp, char page[], u_long offsets[]);
-void read_random(FILE* fp, char page[], u_long offsets[]);
+void read_sequentially(int fd, char page[], u_long offsets[]);
+void read_random(int fd, char page[], u_long offsets[]);
 void shuffle(u_long *array, u_long n);
 void preallocate_test_file(char filename[]);
+void handle(const char *string, int error)
+{
+	if (error) {
+		perror(string);
+		exit(EXIT_FAILURE);
+	}
+}
+off64_t fsize(const char *filename) {
+    struct stat st;
 
-int main(void)
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return -1;
+}
+int main(int argc, char **argv)
 {
 	u_long *offsets = malloc(NUM_OF_PAGES * sizeof(u_long));
+
 	fill_indexes(offsets, NUM_OF_PAGES);
 
 	//printf("%lu\n", offsets[NUM_OF_PAGES - 1]);
@@ -30,58 +55,44 @@ int main(void)
 
 	//printf("rand: %ld\n", rand() / (RAND_MAX / (NUM_OF_PAGES - 0) + 1));
 
-
 	char page[PAGE_SIZE];
-	char filename[] = "/home/miguel/TCC/file_1gb.dat";
-    FILE *fp;
 
-//	preallocate_test_file(filename);
+	if (argc != 2) {
+		printf("Usage: teste <path/to/filename>\n");
+		exit(EXIT_SUCCESS);
+	}
 
-    if ((fp = fopen(filename, "r")) == NULL) {
-        printf("Couldn't open test1.dat for reading\n");
-        exit(1);
-    } 
+	//preallocate_test_file(argv[1]);
+ 
+	int fd, retval;
 
-/*    clock_t tic, toc;
-    tic = clock();
+	fd = open(argv[1], O_RDONLY);
+	handle("open", fd < 0);
 
-    read_sequentially(fp, page, offsets);
-
-    toc = clock();
-
-    printf("Sequential read elapsed time: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
-
-    tic = clock();
-
-    read_random(fp, page, offsets);
-
-    toc = clock();
-
-    printf("Random read elapsed time: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
-    */
-
+	printf("size: %ld\n", (off64_t) fsize(argv[1]));
+ 
     struct timeval  tv1, tv2;
 
     gettimeofday(&tv1, NULL);
 	printf("Random read started...\n");
-	read_random(fp, page, offsets);
+	read_random(fd, page, offsets);
 	gettimeofday(&tv2, NULL);
 
-	printf ("Random read total time = %f seconds\n",
+	printf("Random read total time = %f seconds\n",
 	         (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
 	         (double) (tv2.tv_sec - tv1.tv_sec));
 
 	gettimeofday(&tv1, NULL);
 	printf("Sequential read started...\n");
-	read_sequentially(fp, page, offsets);
+	read_sequentially(fd, page, offsets);
 	gettimeofday(&tv2, NULL);
 
-	printf ("Sequential read total time = %f seconds\n",
+	printf("Sequential read total time = %f seconds\n",
 	         (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
 	         (double) (tv2.tv_sec - tv1.tv_sec));
 
     free(offsets);
-    fclose(fp);
+    close(fd);
 
 	return 0;
 }
@@ -91,37 +102,37 @@ void fill_indexes(u_long arr[], u_long n)
 	for (i = 0; i < n; i++)
 		arr[i] = i;
 }
-void read_sequentially(FILE* fp, char page[], u_long offsets[])
-{
-	int i = 0;
-	fpos_t pos;
-	rewind(fp);
-	//fgetpos(fp, &pos);
-	for (i = 0; i < NUM_OF_PAGES; i++) {
-		
-		//fgetpos(fp, &pos);
-		fread(page, PAGE_SIZE, 1, fp);
-	}
-	//fgetpos(fp, &pos);
-//	printf("%ld\n", pos.__pos);
-	//fseek(fp, offsets[i] * PAGE_SIZE, SEEK_SET);
-}
-void read_random(FILE* fp, char page[], u_long offsets[])
+void read_sequentially(int fd, char page[], u_long offsets[])
 {
 	u_long i;
-	fpos_t pos;
-
-	rewind(fp);
+	u_long retval = 0;
+	off_t offset;
+	
+	lseek64(fd, 0, SEEK_SET);
 
 	for (i = 0; i < NUM_OF_PAGES; i++) {
-		fseek(fp, offsets[i] * PAGE_SIZE, SEEK_SET);
-		//fgetpos(fp, &pos);
-		//printf("fp: %ld\n", pos.__pos);
-		//printf("offset: %ld\n", offsets[i] * PAGE_SIZE);
-		fread(page, PAGE_SIZE, 1, fp);
+		retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
+		//printf("pos: %ld\n", retval);
+		handle("lseek64", retval == (off_t) - 1);
+		retval = read(fd, page, PAGE_SIZE);
+		handle("read", retval < 0);
 	}
-	fgetpos(fp, &pos);
-	printf("%ld\n", pos.__pos);
+}
+void read_random(int fd, char page[], u_long offsets[])
+{
+	u_long i;
+	u_long retval = 0;
+	off_t offset;
+
+	lseek64(fd, 0, SEEK_SET);
+
+	for (i = 0; i < NUM_OF_PAGES; i++) {
+		//printf("pos: %d\n", (int) lseek(fd, retval, SEEK_CUR));
+		retval = lseek64(fd, offsets[i] * PAGE_SIZE, SEEK_SET);
+		handle("lseek64", retval == (off_t) - 1);
+		retval = read(fd, page, PAGE_SIZE);
+		handle("read", retval < 0);
+	}
 }
 void shuffle(u_long *array, u_long n)
 {
