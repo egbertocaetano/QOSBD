@@ -52,6 +52,9 @@ int main(int argc, char **argv)
 		printf("Usage: teste <path/to/filename> <page_size>\n");
 		exit(EXIT_SUCCESS);
 	}
+
+	setvbuf(stdout, NULL, _IONBF, 0);
+
 	printf("factor: %d\n", atoi(argv[2]) / PAGE_SIZE);
 	NUM_OF_PAGES *= (atoi(argv[2]) / PAGE_SIZE);
 	FILE_SIZE = PAGE_SIZE * NUM_OF_PAGES;
