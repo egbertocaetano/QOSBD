@@ -218,8 +218,6 @@ char *preallocate_test_file(char filename[], char end[])
 			page[i] = ((i + 65) % 122);
 		}
 
-		shuffle_page(page, strlen(new_filename));
-
 		if ((fp = fopen(new_filename, "w+")) == NULL) {
 			printf("Couldn't create new file\n");
 			exit(1);
@@ -227,6 +225,7 @@ char *preallocate_test_file(char filename[], char end[])
 
 		u_long_long j;
 		for (j = 0; j < FILE_SIZE; j += PAGE_SIZE) {
+			shuffle_page(page, PAGE_SIZE);
 			fwrite(page, PAGE_SIZE, 1, fp);
 		}
 
