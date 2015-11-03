@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
@@ -28,7 +29,8 @@ void fill_indexes(u_long_long arr[], u_long_long n);
 void read_sequentially(int fd, char page[], u_long_long offsets[]);
 void read_random(int fd, char page[], u_long_long offsets[]);
 void shuffle(u_long_long *array, u_long_long n);
-void preallocate_test_file(char filename[]);
+char *preallocate_test_file(char filename[], char end[]);
+void shuffle_page(char *array, int n);
 void handle(const char *string, int error)
 {
 	if (error) {
@@ -76,22 +78,23 @@ int main(int argc, char **argv)
 
 	char page[PAGE_SIZE];
 
-	// preallocate_test_file(argv[1]);
+	char *seq_file = preallocate_test_file(argv[1], "_seq");
+	char *random_file = preallocate_test_file(argv[1], "_random");
  
-	int fd, retval;
+	int fd_seq, fd_rand, retval;
 
-	fd = open(filename, O_RDONLY);
-	handle("open", fd < 0);
+	fd_seq = open(seq_file, O_RDONLY);
+	handle("open seq", fd_seq < 0);
 
 	//printf("size: %li\n", (off64_t) fsize(argv[1]));
  
     struct timeval  tv1, tv2;
 
-    printf("fd seq: %d\n", fd);
+    printf("fd seq: %d\n", fd_seq);
 
     gettimeofday(&tv1, NULL);
 	printf("Sequential read started...\n");
-	read_sequentially(fd, page, offsets);
+	read_sequentially(fd_seq, page, offsets);
 	gettimeofday(&tv2, NULL);
 
 	double seq_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -99,16 +102,16 @@ int main(int argc, char **argv)
 
 	printf("Sequential read total time = %f seconds\n", seq_time);
 
-	close(fd);
+	close(fd_seq);
 
-	fd = open(filename, O_RDONLY);
-	handle("open", fd < 0);
+	fd_rand = open(random_file, O_RDONLY);
+	handle("open seq", fd_rand < 0);
 
-	printf("fd random: %d\n", fd);
+	printf("fd random: %d\n", fd_rand);
 
     gettimeofday(&tv1, NULL);
 	printf("Random read started...\n");
-	read_random(fd, page, offsets);
+	read_random(fd_rand, page, offsets);
 	gettimeofday(&tv2, NULL);
 
 	double rand_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -119,7 +122,10 @@ int main(int argc, char **argv)
 	printf("Random time is %f slower than Sequential time:\n", rand_time / seq_time);
 
     free(offsets);
-    close(fd);
+    free(seq_file);
+    free(random_file);
+
+    close(fd_rand);
 
 	return 0;
 }
@@ -174,19 +180,58 @@ void shuffle(u_long_long *array, u_long_long n)
 		}
 	}
 }
-
-void preallocate_test_file(char filename[])
+void shuffle_page(char *array, int n)
 {
+	srand(time(NULL));
+	if (n > 1) {
+		int i;
+		for (i = 0; i < n - 1; i++) {
+			int j = i + rand() / (RAND_MAX / (n - i) + 1);
+			int t = array[j];
+			array[j] = array[i];
+			array[i] = t;
+		}
+	}
+}
+
+char *preallocate_test_file(char filename[], char end[])
+{
+
+
 	FILE *fp;
 
-    if ((fp = fopen(filename, "w+")) == NULL) {
-        printf("Couldn't create new file\n");
-        exit(1);
-    } 
-    u_long_long i;
-	for (i = 0; i < FILE_SIZE; i += PAGE_SIZE) {
-		fwrite(BLANK_PAGE, PAGE_SIZE, 1, fp);
+	char page[PAGE_SIZE];
+
+	char *new_filename = malloc(strlen(filename) + strlen(end) + 1);
+
+	strcpy(new_filename,  filename);
+	strcat(new_filename, end);
+
+	printf("%s\n", new_filename);
+
+	if(access(new_filename, F_OK ) != -1 ) {
+		printf("file: %s already exists\n", new_filename);
+	} else {
+		printf("creating a new file: %s...\n", new_filename);
+		int i = 0;
+		for (i = 0; i < PAGE_SIZE; i++) {
+			page[i] = ((i + 65) % 122);
+		}
+
+		shuffle_page(page, strlen(new_filename));
+
+		if ((fp = fopen(new_filename, "w+")) == NULL) {
+			printf("Couldn't create new file\n");
+			exit(1);
+		} 
+
+		u_long_long j;
+		for (j = 0; j < FILE_SIZE; j += PAGE_SIZE) {
+			fwrite(page, PAGE_SIZE, 1, fp);
+		}
+
+		fclose(fp);		
 	}
 
-	fclose(fp);
+	return new_filename;
 }
