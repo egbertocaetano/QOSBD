@@ -17,7 +17,7 @@
 typedef unsigned long long int u_long_long;
 
 #define PAGE_SIZE 512
-#define N_PAGES (1000 * 1000L)
+#define N_PAGES (100 * 1000L)
 
 
 char BLANK_PAGE[PAGE_SIZE];
@@ -78,23 +78,23 @@ int main(int argc, char **argv)
 
 	char page[PAGE_SIZE];
 
-	char *seq_file = preallocate_test_file(argv[1], "_seq");
-	char *random_file = preallocate_test_file(argv[1], "_random");
+	char *data_file = preallocate_test_file(argv[1], "_data");
+	// char *random_file = preallocate_test_file(argv[1], "_random");
  
-	int fd_seq, fd_rand, retval;
+	int fd_data, retval;
 
-	fd_seq = open(seq_file, O_RDONLY);
-	handle("open seq", fd_seq < 0);
+	fd_data = open(data_file, O_RDONLY);
+	handle("open data", fd_data < 0);
 
 	//printf("size: %li\n", (off64_t) fsize(argv[1]));
  
     struct timeval  tv1, tv2;
 
-    printf("fd seq: %d\n", fd_seq);
+    printf("fd data: %d\n", fd_data);
 
     gettimeofday(&tv1, NULL);
 	printf("Sequential read started...\n");
-	read_sequentially(fd_seq, page, offsets);
+	read_sequentially(fd_data, page, offsets);
 	gettimeofday(&tv2, NULL);
 
 	double seq_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -102,16 +102,9 @@ int main(int argc, char **argv)
 
 	printf("Sequential read total time = %f seconds\n", seq_time);
 
-	close(fd_seq);
-
-	fd_rand = open(random_file, O_RDONLY);
-	handle("open seq", fd_rand < 0);
-
-	printf("fd random: %d\n", fd_rand);
-
     gettimeofday(&tv1, NULL);
 	printf("Random read started...\n");
-	read_random(fd_rand, page, offsets);
+	read_random(fd_data, page, offsets);
 	gettimeofday(&tv2, NULL);
 
 	double rand_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -121,11 +114,14 @@ int main(int argc, char **argv)
 
 	printf("Random time is %f slower than Sequential time:\n", rand_time / seq_time);
 
-    free(offsets);
-    free(seq_file);
-    free(random_file);
 
-    close(fd_rand);
+    unlink(data_file);
+    printf("deleting the file: %s...\n", data_file);
+
+    free(offsets);
+    free(data_file);
+
+    close(fd_data);
 
 	return 0;
 }
@@ -143,8 +139,8 @@ void read_sequentially(int fd, char page[], u_long_long offsets[])
 	lseek64(fd, 0, SEEK_SET);
 
 	for (i = 0; i < NUM_OF_PAGES; i++) {
-		retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
-	//	printf("pos: %llu\n", (u_long_long) lseek(fd, 0, SEEK_CUR));
+		// retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
+		// printf("pos: %llu\n", (u_long_long) lseek(fd, 0, SEEK_CUR));
 		//printf("i: %llu\n", i);
 		handle("lseek64", retval == (off_t) - 1);
 		retval = read(fd, page, PAGE_SIZE);
@@ -196,8 +192,6 @@ void shuffle_page(char *array, int n)
 
 char *preallocate_test_file(char filename[], char end[])
 {
-
-
 	FILE *fp;
 
 	char page[PAGE_SIZE];
