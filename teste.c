@@ -16,8 +16,8 @@
 
 typedef unsigned long long int u_long_long;
 
-#define PAGE_SIZE 512
-#define N_PAGES (100 * 1000L)
+#define PAGE_SIZE 1000
+#define N_PAGES 100000L
 
 
 char BLANK_PAGE[PAGE_SIZE];
@@ -49,8 +49,8 @@ off64_t fsize(const char *filename) {
 int main(int argc, char **argv)
 {
     if (argc != 3) {
-        // ./teste /path/to/file/file512.dat 512
-        // ./teste /path/to/file/file1024.dat 1024
+        // ./teste /path/to/file/file500.dat 500000
+        // ./teste /path/to/file/file1000.dat 1000000
         printf("Usage: teste <path/to/filename> <page_size>\n");
         exit(EXIT_SUCCESS);
     }
@@ -76,25 +76,25 @@ int main(int argc, char **argv)
 
 //  printf("%llu\n", offsets[0]);
 
-    char page[PAGE_SIZE];
+    char *page = malloc(PAGE_SIZE);
 
-    char *data_file = preallocate_test_file(argv[1], "_data");
-    // char *random_file = preallocate_test_file(argv[1], "_random");
+    char *seq_file = preallocate_test_file(argv[1], "_seq");
+    char *random_file = preallocate_test_file(argv[1], "_random");
  
-    int fd_data, retval;
+    int fd_seq, fd_random, retval;
 
-    fd_data = open(data_file, O_RDONLY);
-    handle("open data", fd_data < 0);
+    fd_seq = open(seq_file, O_RDONLY);
+    handle("open seq file", fd_seq < 0);
 
     //printf("size: %li\n", (off64_t) fsize(argv[1]));
  
     struct timeval  tv1, tv2;
 
-    printf("fd data: %d\n", fd_data);
+    printf("fd seq: %d\n", fd_seq);
 
     gettimeofday(&tv1, NULL);
     printf("Sequential read started...\n");
-    read_sequentially(fd_data, page, offsets);
+    read_sequentially(fd_seq, page, offsets);
     gettimeofday(&tv2, NULL);
 
     double seq_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -102,9 +102,16 @@ int main(int argc, char **argv)
 
     printf("Sequential read total time = %f seconds\n", seq_time);
 
+    fd_random = open(random_file, O_RDONLY);
+    handle("open seq file", fd_random < 0);
+
+    //printf("size: %li\n", (off64_t) fsize(argv[1]));
+ 
+    printf("fd random: %d\n", fd_random);
+
     gettimeofday(&tv1, NULL);
     printf("Random read started...\n");
-    read_random(fd_data, page, offsets);
+    read_random(fd_random, page, offsets);
     gettimeofday(&tv2, NULL);
 
     double rand_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -112,16 +119,24 @@ int main(int argc, char **argv)
 
     printf("Random read total time = %f seconds\n", rand_time);
 
+
+
     printf("Random time is %f slower than Sequential time:\n", rand_time / seq_time);
 
+    unlink(seq_file);
+    unlink(random_file);
 
 /*    unlink(data_file);
     printf("deleting the file: %s...\n", data_file);
 */
     free(offsets);
-    free(data_file);
+    free(seq_file);
+    free(random_file);
+    
+    free(page);
 
-    close(fd_data);
+    close(fd_seq);
+    close(fd_random);
 
     return 0;
 }
@@ -139,7 +154,7 @@ void read_sequentially(int fd, char page[], u_long_long offsets[])
     lseek64(fd, 0, SEEK_SET);
 
     for (i = 0; i < NUM_OF_PAGES; i++) {
-        retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
+        // retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
         // printf("pos: %llu\n", (u_long_long) lseek(fd, 0, SEEK_CUR));
         //printf("i: %llu\n", i);
         handle("lseek64", retval == (off_t) - 1);
@@ -158,6 +173,7 @@ void read_random(int fd, char page[], u_long_long offsets[])
         //printf("pos: %llu\n", (u_long_long) lseek(fd, 0, SEEK_CUR));
         //printf("i: %llu\n", i);
         retval = lseek64(fd, offsets[i] * PAGE_SIZE, SEEK_SET);
+        // printf("i: %llu\n", offsets[i]);
         handle("lseek64", retval == (off_t) - 1);
         retval = read(fd, page, PAGE_SIZE);
         handle("read", retval < 0);
@@ -194,7 +210,7 @@ char *preallocate_test_file(char filename[], char end[])
 {
     FILE *fp;
 
-    char page[PAGE_SIZE];
+    char *page = malloc(PAGE_SIZE);
 
     char *new_filename = malloc(strlen(filename) + strlen(end) + 1);
 
@@ -225,6 +241,8 @@ char *preallocate_test_file(char filename[], char end[])
 
         fclose(fp);     
     }
+
+    free(page);
 
     return new_filename;
 }
