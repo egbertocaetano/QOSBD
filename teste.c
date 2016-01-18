@@ -124,7 +124,7 @@ void test_sequential(int argc, char **argv)
 		offset = (off64_t) i;
 	//	printf("pos[%llu]: %llu\n", i, (u_long_long) lseek64(fd, 0, SEEK_CUR));
 	//	printf("pos[%llu]: %llu\n", i, (u_long_long) offset);
-		retval = lseek64(fd, BLOCKSIZE * offset, SEEK_SET);
+		// retval = lseek64(fd, BLOCKSIZE * offset, SEEK_SET);
 		handle("lseek64", retval == (off64_t) -1);
 		retval = read(fd, buffer, BLOCKSIZE);
 		handle("read", retval < 0);
@@ -134,7 +134,7 @@ void test_sequential(int argc, char **argv)
 }
 int main(int argc, char **argv)
 {
-	//test_random(argc, argv);
+	// test_random(argc, argv);
 	test_sequential(argc, argv);
 
 	return 0;
