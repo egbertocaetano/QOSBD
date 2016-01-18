@@ -18,7 +18,7 @@ typedef unsigned long long int u_long_long;
 
 #define PAGE_SIZE 1000
 #define N_PAGES 100000L
-
+#define BLOCKSIZE 512
 
 char BLANK_PAGE[PAGE_SIZE];
 
@@ -46,55 +46,33 @@ off64_t fsize(const char *filename) {
 
     return -1;
 }
+void run_seq(int fd, unsigned long numblocks, off64_t offset);
+void run_random(int fd, unsigned long numblocks, off64_t offset);
 int main(int argc, char **argv)
 {
-    if (argc != 3) {
-        // ./teste /path/to/file/file500.dat 500000
-        // ./teste /path/to/file/file1000.dat 1000000
-        printf("Usage: teste <path/to/filename> <page_size>\n");
-        exit(EXIT_SUCCESS);
-    }
+    int fd, retval;
+    unsigned long numblocks;
+    off64_t offset;
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    printf("factor: %d\n", atoi(argv[2]) / PAGE_SIZE);
-    NUM_OF_PAGES *= (atoi(argv[2]) / PAGE_SIZE);
-    FILE_SIZE = PAGE_SIZE * NUM_OF_PAGES;
+    if (argc != 2) {
+        printf("Usage: seeker <raw disk device>\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    fd = open(argv[1], O_RDONLY);
+    handle("open", fd < 0);
+
+    retval = ioctl(fd, BLKGETSIZE64, &numblocks);
+    handle("ioctl", retval == -1);
 
 
-    char *filename = argv[1];
-
-    u_long_long *offsets = malloc(NUM_OF_PAGES * sizeof(u_long_long));
-
-    fill_indexes(offsets, NUM_OF_PAGES);
-
-    printf("NUM_OF_PAGES: %llu\n", NUM_OF_PAGES);
-    printf("FILE_SIZE: %llu\n", FILE_SIZE);
-    printf("PAGE_SIZE: %i\n", PAGE_SIZE);
-
-    shuffle(offsets, NUM_OF_PAGES);
-
-//  printf("%llu\n", offsets[0]);
-
-    char *page = malloc(PAGE_SIZE);
-
-    char *seq_file = preallocate_test_file(argv[1], "_seq");
-    char *random_file = preallocate_test_file(argv[1], "_random");
- 
-    int fd_seq, fd_random, retval;
-
-    fd_seq = open(seq_file, O_RDONLY);
-    handle("open seq file", fd_seq < 0);
-
-    //printf("size: %li\n", (off64_t) fsize(argv[1]));
- 
     struct timeval  tv1, tv2;
-
-    printf("fd seq: %d\n", fd_seq);
 
     gettimeofday(&tv1, NULL);
     printf("Sequential read started...\n");
-    read_sequentially(fd_seq, page, offsets);
+    run_seq(fd, numblocks, offset);
     gettimeofday(&tv2, NULL);
 
     double seq_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -102,16 +80,11 @@ int main(int argc, char **argv)
 
     printf("Sequential read total time = %f seconds\n", seq_time);
 
-    fd_random = open(random_file, O_RDONLY);
-    handle("open seq file", fd_random < 0);
 
-    //printf("size: %li\n", (off64_t) fsize(argv[1]));
- 
-    printf("fd random: %d\n", fd_random);
 
     gettimeofday(&tv1, NULL);
     printf("Random read started...\n");
-    read_random(fd_random, page, offsets);
+    run_random(fd, numblocks, offset);
     gettimeofday(&tv2, NULL);
 
     double rand_time = (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
@@ -119,27 +92,44 @@ int main(int argc, char **argv)
 
     printf("Random read total time = %f seconds\n", rand_time);
 
-
-
-    printf("Random time is %f slower than Sequential time:\n", rand_time / seq_time);
-
-    unlink(seq_file);
-    unlink(random_file);
-
-/*    unlink(data_file);
-    printf("deleting the file: %s...\n", data_file);
-*/
-    free(offsets);
-    free(seq_file);
-    free(random_file);
-    
-    free(page);
-
-    close(fd_seq);
-    close(fd_random);
-
     return 0;
 }
+
+void run_seq(int fd, unsigned long numblocks, off64_t offset) 
+{
+    int retval;
+    char buffer[BLOCKSIZE];
+    u_long_long i = 0;
+    lseek64(fd, 0, SEEK_SET);
+    for (i = 0; i < 1000000; i++) {
+        //printf("pos[%llu]: %llu\n", i, (u_long_long) lseek64(fd, 0, SEEK_CUR));
+
+        handle("lseek64", retval == (off64_t) -1);
+        retval = read(fd, buffer, BLOCKSIZE);
+        handle("read", retval < 0);
+    }
+}
+
+void run_random(int fd, unsigned long numblocks, off64_t offset) 
+{
+    int retval;
+    char buffer[BLOCKSIZE];
+    u_long_long i = 0;
+    lseek64(fd, 0, SEEK_SET);
+    for (i = 0; i < 1000000; i++) {
+        //printf("pos[%llu]: %llu\n", i, (u_long_long) lseek64(fd, 0, SEEK_CUR));
+        // printf("num of blocks %llu\n", numblocks);
+        offset = (off64_t) (numblocks/1024) * random() / RAND_MAX;
+        // printf("pos[%llu]: %llu\n", offset);
+        retval = lseek64(fd, BLOCKSIZE * offset, SEEK_SET);
+        handle("lseek64", retval == (off64_t) -1);
+        retval = read(fd, buffer, BLOCKSIZE);
+        handle("read", retval < 0);
+    }
+}
+
+
+
 void fill_indexes(u_long_long arr[], u_long_long n)
 {
     u_long_long i;
