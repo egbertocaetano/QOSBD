@@ -16,7 +16,7 @@
 
 typedef unsigned long long int u_long_long;
 
-#define BLOCKSIZE 8192
+#define BLOCKSIZE 2048
 
 u_long_long NUM_OF_BLOCKS = 1000000L;
 u_long_long FILE_SIZE = 0;
