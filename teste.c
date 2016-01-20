@@ -16,7 +16,7 @@
 
 typedef unsigned long long int u_long_long;
 
-#define BLOCKSIZE 4096
+#define BLOCKSIZE 8192
 
 u_long_long NUM_OF_BLOCKS = 1000000L;
 u_long_long FILE_SIZE = 0;
@@ -51,12 +51,13 @@ int main(int argc, char **argv)
     u_long_long *offsets = malloc(NUM_OF_BLOCKS * sizeof(u_long_long));
 
     fill_indexes(offsets, NUM_OF_BLOCKS);
+    shuffle(offsets, NUM_OF_BLOCKS);
 
     printf("NUM_OF_BLOCKS: %llu\n", NUM_OF_BLOCKS);
     printf("FILE_SIZE: %llu\n", NUM_OF_BLOCKS * BLOCKSIZE);
     printf("BLOCKSIZE: %i\n", BLOCKSIZE);
+    printf("First offset index: %llu\n", offsets[0]);
 
-    shuffle(offsets, NUM_OF_BLOCKS);
 
 
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -87,7 +88,7 @@ int main(int argc, char **argv)
 
 
 
-/*    gettimeofday(&tv1, NULL);
+    gettimeofday(&tv1, NULL);
     printf("Random read started...\n");
     run_random(fd, offsets);
     gettimeofday(&tv2, NULL);
@@ -96,7 +97,10 @@ int main(int argc, char **argv)
              (double) (tv2.tv_sec - tv1.tv_sec);
 
     printf("Random read total time = %f seconds\n", rand_time);
-*/
+
+    printf("Factor: %.4f\n", rand_time / seq_time);
+
+
     free(offsets);
 
     return 0;
@@ -142,7 +146,7 @@ void fill_indexes(u_long_long arr[], u_long_long n)
 
 void shuffle(u_long_long *array, u_long_long n)
 {
-    srand(time(NULL));
+    srand(10);
     if (n > 1) {
         u_long_long i;
         for (i = 0; i < n - 1; i++) {
