@@ -152,7 +152,7 @@ void read_sequentially(int fd, char page[], u_long_long offsets[])
     lseek64(fd, 0, SEEK_SET);
 
     for (i = 0; i < NUM_OF_PAGES; i++) {
-        // retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
+        retval = lseek64(fd, i * PAGE_SIZE, SEEK_SET);
         // printf("pos: %llu\n", (u_long_long) lseek(fd, 0, SEEK_CUR));
         //printf("i: %llu\n", i);
         handle("lseek64", retval == (off_t) - 1);
@@ -179,7 +179,7 @@ void read_random(int fd, char page[], u_long_long offsets[])
 }
 void shuffle(u_long_long *array, u_long_long n)
 {
-    srand(time(NULL));
+    srand(10);
     if (n > 1) {
         u_long_long i;
         for (i = 0; i < n - 1; i++) {
@@ -192,7 +192,7 @@ void shuffle(u_long_long *array, u_long_long n)
 }
 void shuffle_page(char *array, int n)
 {
-    srand(time(NULL));
+    srand(10);
     if (n > 1) {
         int i;
         for (i = 0; i < n - 1; i++) {
