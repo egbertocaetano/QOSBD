@@ -16,8 +16,8 @@
 
 typedef unsigned long long int u_long_long;
 
-#define PAGE_SIZE 1000
-#define N_PAGES 100000L
+#define PAGE_SIZE 512
+#define N_PAGES 1000000L
 
 
 char BLANK_PAGE[PAGE_SIZE];
@@ -119,12 +119,10 @@ int main(int argc, char **argv)
 
     printf("Random read total time = %f seconds\n", rand_time);
 
-
-
     printf("Random time is %f slower than Sequential time:\n", rand_time / seq_time);
 
-    unlink(seq_file);
-    unlink(random_file);
+    // unlink(seq_file);
+    // unlink(random_file);
 
 /*    unlink(data_file);
     printf("deleting the file: %s...\n", data_file);
