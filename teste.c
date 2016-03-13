@@ -17,7 +17,7 @@
 typedef unsigned long long int u_long_long;
 
 #define PAGE_SIZE 512
-#define N_PAGES 1000000L
+#define N_PAGES 100000L
 
 
 char BLANK_PAGE[PAGE_SIZE];
