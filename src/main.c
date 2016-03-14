@@ -2,12 +2,18 @@
 
 #include "estimator.h"
 
-
 int main(int argc, char **argv)
 {
-    char *SEQ_FILE_NAME = "file1024_seq";
-    char *RANDOM_FILE_NAME = "file1024_random";
-    long NUM_PAGES = 100000L;
+    if (argc != 3) {
+        // ./teste /path/to/file/file500.dat 500000
+        // ./teste /path/to/file/file1000.dat 1000000
+        printf("Usage: qosgbd [FILENAME] [NUM_OF_PAGES]\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    char *SEQ_FILE_NAME = filename_format(argv[1], "_seq");
+    char *RANDOM_FILE_NAME = filename_format(argv[1], "_random");
+    long NUM_PAGES = atol(argv[2]);
 
     Estimator *seq_estimator = create_estimator(sequential_strategy, SEQ_FILE_NAME, NUM_PAGES);
 

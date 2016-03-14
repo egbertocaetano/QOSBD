@@ -6,6 +6,8 @@ Estimator *create_estimator(Strategy strategy, char *file_name, long num_of_page
 
 	new_estimator->elapsed_time = 0.0;
 	new_estimator->strategy = strategy;
+	new_estimator->num_of_pages = num_of_pages;
+	new_estimator->file_name = file_name;
 
 	return new_estimator;
 }
@@ -26,11 +28,11 @@ void run_test(Estimator *estimator)
 
     shuffle(offsets, estimator->num_of_pages);
 
-    char *file = preallocate_test_file(estimator->file_name, file_size);
- 
+   	preallocate_test_file(estimator->file_name, file_size);
+     
     int fd, retval;
 
-    fd = open(file, O_RDONLY);
+    fd = open(estimator->file_name, O_RDONLY);
     handle("open file", fd < 0);
 
 	struct timeval  tv1, tv2;
@@ -43,6 +45,8 @@ void run_test(Estimator *estimator)
              (double) (tv2.tv_sec - tv1.tv_sec);
 
     estimator->elapsed_time = seq_time;
+    
+    free(offsets);
 }
 
 double get_result(Estimator *estimator)

@@ -1,4 +1,4 @@
-#include "../utils/util.h"
+#include "util.h"
 
 void fill_indexes(long long arr[], long long n)
 {
@@ -33,20 +33,20 @@ void shuffle_page(char *array, int n)
     }
 }
 
-char *preallocate_test_file(char filename[], long long file_size)
+void preallocate_test_file(char filename[], long long file_size)
 {
     FILE *fp;
 
     char *page = malloc(PAGE_SIZE);
 
-    printf("%s\n", filename);
+    printf("creating file of size: %lld\n", file_size);
 
     if(access(filename, F_OK ) != -1 ) {
         printf("file: %s already exists\n", filename);
     } else {
         printf("creating a new file: %s...\n", filename);
         int i = 0;
-        for (i = 0; i < file_size; i++) {
+        for (i = 0; i < PAGE_SIZE; i++) {
             page[i] = ((i + 65) % 122);
         }
 
@@ -65,8 +65,6 @@ char *preallocate_test_file(char filename[], long long file_size)
     }
 
     free(page);
-
-    return filename;
 }
 
 void handle(const char *string, int error)
@@ -75,4 +73,14 @@ void handle(const char *string, int error)
         perror(string);
         exit(EXIT_FAILURE);
     }
+}
+
+char *filename_format(char *filename, char *end)
+{
+    char *new_filename = malloc(strlen(filename) + strlen(end) + 1);
+
+    strcpy(new_filename,  filename);
+    strcat(new_filename, end);
+
+    return new_filename;
 }

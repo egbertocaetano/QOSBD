@@ -28,8 +28,10 @@ void shuffle(long long *array, long long n);
 
 void shuffle_page(char *array, int n);
 
-char *preallocate_test_file(char filename[], long long);
+void preallocate_test_file(char filename[], long long);
 
 void handle(const char *string, int error);
+
+char *filename_format(char *filename, char *end);
 
 #endif

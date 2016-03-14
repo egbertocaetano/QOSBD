@@ -1,5 +1,6 @@
 all: 	
-		gcc -o ./utils/util.c
-		gcc -o ./src/estimator.c
-		gcc -o ./src/main.c
-		gcc estimator.o util.o main.o -o main
+		clang -c ./utils/util.c
+		clang -c ./src/estimator.c
+		clang -c ./src/main.c
+		clang estimator.o util.o main.o -o qosgbd
+		rm *.o
