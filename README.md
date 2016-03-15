@@ -1,10 +1,10 @@
-QoSDB
+# QoSDB
 --------------
 
 QoSDB é um estimator de custo de leitura em disco. Seu propósito é de auxiliar na detecção 
 dos custos de leitura sequencial e aleatória de um disco rígido.
 
-Compilando QoSDB
+## Compilando QoSDB
 --------------
 
 QoSDB pode ser compilado em Linux. Suporta arquiteturas *big endian* e *little endian* tanto de
@@ -14,7 +14,7 @@ Para compilar execute:
 
     % make
 
-Executando QoSDB
+## Executando QoSDB
 -------------
 
 Para executar, rode o comando:
@@ -28,7 +28,7 @@ que esse arquivo terá. Por padrão o QoSDB define cada página como 512 bytes. 
     % ./qosgbd file1024 200000
     % ./qosgbd file5120 1600000
 
-Dependências
+## Dependências
 -------------
 - clang
 - make
