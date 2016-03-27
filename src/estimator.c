@@ -2,19 +2,19 @@
 
 Estimator *create_estimator(Strategy strategy, char *file_name, long num_of_pages)
 {
-	Estimator *new_estimator = malloc(sizeof(Estimator));
+    Estimator *new_estimator = malloc(sizeof(Estimator));
 
-	new_estimator->elapsed_time = 0.0;
-	new_estimator->strategy = strategy;
-	new_estimator->num_of_pages = num_of_pages;
-	new_estimator->file_name = file_name;
+    new_estimator->elapsed_time = 0.0;
+    new_estimator->strategy = strategy;
+    new_estimator->num_of_pages = num_of_pages;
+    new_estimator->file_name = file_name;
 
-	return new_estimator;
+    return new_estimator;
 }
 
 void run_test(Estimator *estimator)
 {
-	setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
 
     long file_size = PAGE_SIZE * estimator->num_of_pages;
 
@@ -28,14 +28,14 @@ void run_test(Estimator *estimator)
 
     shuffle(offsets, estimator->num_of_pages);
 
-   	preallocate_test_file(estimator->file_name, file_size);
+    preallocate_test_file(estimator->file_name, file_size);
      
     int fd, retval;
 
     fd = open(estimator->file_name, O_RDONLY);
     handle("open file", fd < 0);
 
-	struct timeval  tv1, tv2;
+    struct timeval  tv1, tv2;
 
     gettimeofday(&tv1, NULL);
     estimator->strategy(fd, estimator->num_of_pages, offsets);
@@ -51,13 +51,13 @@ void run_test(Estimator *estimator)
 
 double get_result(Estimator *estimator)
 {
-	return estimator->elapsed_time;
+    return estimator->elapsed_time;
 }
 
 void sequential_strategy(int fd, long long num_of_pages, long long offsets[])
 {
     char *page = malloc(PAGE_SIZE);
-	long long i;
+    long long i;
     long long retval = 0;
     
     lseek64(fd, 0, SEEK_SET);
@@ -76,7 +76,7 @@ void sequential_strategy(int fd, long long num_of_pages, long long offsets[])
 void random_strategy(int fd, long long num_of_pages, long long offsets[])
 {
     char *page = malloc(PAGE_SIZE);
-	long long i;
+    long long i;
     long long retval = 0;
 
     lseek64(fd, 0, SEEK_SET);

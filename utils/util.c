@@ -21,7 +21,7 @@ void shuffle(long long *array, long long n)
 }
 void shuffle_page(char *array, int n)
 {
-    srand(10);
+    srand(time(NULL));
     if (n > 1) {
         int i;
         for (i = 0; i < n - 1; i++) {
