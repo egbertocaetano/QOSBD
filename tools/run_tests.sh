@@ -17,6 +17,9 @@ do
         echo "NUMBER OF PAGES: ${NUM_OF_PAGES[$i]}"
         # echo "$(pwd)"
         ./qosdb file${FILE_SIZES[$i]} ${NUM_OF_PAGES[$i]}
+        echo ""
+        echo "-----------------"
+        echo ""
     done
     rm file*
 done
