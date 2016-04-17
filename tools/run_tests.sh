@@ -13,8 +13,8 @@ do
    echo "test number $i..."
     for j in {1..5}
     do
-        echo "FILE SIZE: ${FILE_SIZES[$j]}"
-        echo "NUMBER OF PAGES: ${NUM_OF_PAGES[$j]}"
+        echo "FILE SIZE: ${FILE_SIZES[$i]}"
+        echo "NUMBER OF PAGES: ${NUM_OF_PAGES[$i]}"
         # echo "$(pwd)"
         ./qosdb file${FILE_SIZES[$i]} ${NUM_OF_PAGES[$i]}
     done
